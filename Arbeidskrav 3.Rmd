@@ -1,0 +1,172 @@
+---
+title: "Arbeidskrav 3"
+output: html_document
+author: Mari Hårstad Meslo
+---
+
+$~$
+
+### Introduksjon  
+
+Dataen som er brukt i dette arbeidskravet er hentet fra studien til Haun et al. (2019). Studien så på effekten av styrketrening med høy motstand hos 30 menn, med en intervensjonsperiode som varte i 6 uker. De forsøkspersonene som responderte best på treningen ble plassert i gruppen HIGH (n=10) i CLUSTER-variabelen, og de som responderte lavest på treningen ble plassert i gruppen LOW (n=10). De forsøkspersonene som havnet i midten av disse to gruppene ble merket med NA (n=10) i CLUSTER-variabelen i datasettet. I del 1 av arbeidskravet brukes kun HIGH- og LOW-gruppen, mens i del 2 brukes hele datasettet, altså resultatene fra alle de 30 forsøkspersonene. 
+
+***
+
+
+### Del 1 - T-test og regresjonsanalyse  
+
+
+I del 1 av arbeidskrav 3 skal vi se på sammenhengen mellom variablene _AVG_CSA_T1_ (det gjennomsnittlige muskelfiberarealet av vastus lateralis i høyre fot ved test 1) og _CLUSTER_ (HIGH- og LOW-gruppen).
+
+Jeg vil altså prøve å finne ut om det er noe signifikant forskjell i det gjennomsnittlige muskelfiberarealet hos HIGH- og LOW-gruppen.
+
+_Null-hypotese_: Det er ingen forskjell i det gjennomsnittlige muskelfiberarealet mellom de to gruppene. 
+
+
+$~$
+
+
+
+```{r laste inn pakker, message=FALSE, warning=FALSE, include=FALSE}
+
+library(tidyverse)
+library(broom)
+library(knitr)
+
+```
+
+```{r laste ned data, message=FALSE, warning=FALSE, include=FALSE}
+download.file(url = "https://ndownloader.figstatic.com/files/14702420", 
+              destfile = "./data/hypertrophy.csv")
+
+hypertrophy <- read_csv("./data/hypertrophy1.csv")
+
+```
+
+```{r velge variabler, message=FALSE, warning=FALSE, include=FALSE}
+
+hyp1 <- hypertrophy %>%
+  select("CLUSTER", "AVG_CSA_T1") %>%
+  filter(!is.na(CLUSTER))
+
+```
+
+
+##### T-test 
+
+Tabell 1 viser resultatet av en t-test mellom variablene _AVG_CSA_T1_ og _CLUSTER_. 
+
+$~$
+
+```{r kjøre t-test, message=FALSE, warning=FALSE, echo=FALSE}
+
+ttest <- t.test(AVG_CSA_T1 ~ CLUSTER, data = hyp1, var.equal = TRUE)
+
+tidy(ttest) %>%
+  select(-estimate, -method, - alternative) %>%
+  kable(caption = "Tabell 1", 
+        col.names = c("Gjennomsnitt LOW", "Gjennomsnitt HIGH", "T-verdi", "P-verdi", "DF", "CI low", "CI high"),
+        digits = c(1, 1, 2, 3, 0, 2, 2))
+
+```
+
+
+$~$
+
+
+##### Regresjonsanalyse 
+
+
+Tabell 2 viser resultatet av en regresjonsanalyse mellom variablene _AVG_CSA_T1_ og _CLUSTER_.
+
+$~$
+
+```{r kjøre regressjonsanalyse og se på resultatet, message=FALSE, warning=FALSE, include=FALSE}
+
+blabla <- lm(AVG_CSA_T1 ~ CLUSTER, data = hyp1)
+
+summary(blabla)
+
+```
+
+
+```{r lage fin tabell, message=FALSE, warning=FALSE, echo=FALSE}
+
+tidy(blabla) %>%
+        kable(col.names = c("", "Estimate", "SE", "T-verdi", "P-verdi"), 
+              digits = c(NA, 1, 1, 2, 3),
+              caption = "Tabell 2")
+```
+
+$~$
+
+##### Resultat
+
+Resultatene fra t-testen (tabell 1) og regresjonsanalysen (tabell 2) viser mye av de samme verdiene og tallene. Begge testene viser at p-verdien er 0.013, og dermed kan vi si at det er en signifikant forskjell mellom gruppene dersom signifikansnivået settes til >0.05. Vi kan derfor forkaste nullhypotesen.  
+
+
+$~$
+
+$~$
+
+### Del 2
+
+I denne delen av arbeidskravet sammenlignes forholdet mellom muskelmasse og styrke hos forsøkspersonene (n=30) ved test 1. Variablene som blir brukt i denne delen er _Squat_3RM_kg_ (3RM i knebøy (kg)) og _AVG_CSA_T1_ (det gjennomsnittlige muskelfiberarealet av vastus lateralis i høyre fot). 
+
+$~$
+
+```{r laste inn data og velge variabler, message=FALSE, warning=FALSE, include=FALSE}
+
+del2 <- hypertrophy %>%
+  select("SUB_ID", "Squat_3RM_kg", "AVG_CSA_T1", "T1_BODY_MASS")
+
+```
+
+```{r kjøre korrelasjonsanalyse, message=FALSE, warning=FALSE, include=FALSE}
+
+cor(del2$Squat_3RM_kg, del2$AVG_CSA_T1)
+
+```
+
+```{r draw inference, message=FALSE, warning=FALSE, include=FALSE}
+
+ctest2 <- cor.test(del2$AVG_CSA_T1, del2$Squat_3RM_kg)
+
+```
+
+
+##### Korrelasjonsanalyse
+
+Tabell 3 viser korrelasjonen mellom variablene Squat_3RM_kg og AVG_CSA_T1, og graf 1 viser en grafisk fremstilling av korrelasjonen.   
+
+$~$
+
+```{r lage tabell korrelasjonstabell, message=FALSE, warning=FALSE, echo=FALSE}
+
+tidy(ctest2) %>%
+  select(-method, -alternative) %>%
+  kable(col.names = c("Korrelasjon", "T-verdi", "P-verdi", "DF", "CI low", "CI high"),
+        digits = c(4, 3, 3, 0, 3, 3),
+        caption = "Tabell 3")
+
+```
+
+$~$
+
+$~$
+
+```{r lage graf, message=FALSE, warning=FALSE, echo=FALSE}
+
+del2 %>%
+  ggplot(aes(AVG_CSA_T1, Squat_3RM_kg)) + geom_point() + theme_minimal() + geom_smooth(se =FALSE, method = "lm") + 
+  labs(x = "Gjennomsnittlig muskelfiberareal", y = "3RM knebøy (kg)",
+       caption = "Grafen viser korrelasjonen mellom styrke (3RM knebøy (kg)) og  
+       muskelmasse (Gjennomsnittlig muskelfiberareal) ved test 1", title = "Graf 1")
+
+```
+
+$~$
+
+##### Resultat
+
+En perfekt korrelasjon mellom to variabler er enten 1 eller -1, og ingen korrelasjon er 0. Som vi ser i tabell 3 er det liten korrelasjon (0.02) mellom styrke og muskelmasse i de to aktuelle variablene.
